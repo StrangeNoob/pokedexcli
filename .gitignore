@@ -20,6 +20,9 @@ vendor/
 # Environment variables
 .env
 
+# Local design docs
+docs/superpowers/
+
 # Editor / OS
 .DS_Store
 .idea/
