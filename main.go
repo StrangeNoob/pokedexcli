@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"math/rand"
 	"os"
 	"time"
 
+	"github.com/chzyer/readline"
 	"github.com/strangenoob/pokedexcli/internal/pokeapi"
 	"github.com/strangenoob/pokedexcli/internal/pokecache"
 	"github.com/strangenoob/pokedexcli/internal/pokedex"
@@ -35,11 +35,25 @@ func main() {
 		rng:      rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
+	rl, err := readline.New("Pokedex > ")
+	if err != nil {
+		fmt.Println("Error: could not start readline:", err)
+		os.Exit(1)
+	}
+	defer rl.Close()
+
 	for {
-		fmt.Print("Pokedex > ")
-		scanner.Scan()
-		words := cleanInput(scanner.Text())
+		line, err := rl.Readline()
+		if err == readline.ErrInterrupt {
+			continue // Ctrl+C clears the line; keep going
+		}
+		if err != nil { // io.EOF (Ctrl+D) or other read error
+			fmt.Println("Closing the Pokedex... Goodbye!")
+			autoSave(cfg)
+			return
+		}
+
+		words := cleanInput(line)
 		if len(words) == 0 {
 			continue
 		}
