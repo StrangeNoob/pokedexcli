@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/strangenoob/pokedexcli/internal/ball"
 	"github.com/strangenoob/pokedexcli/internal/battle"
 	"github.com/strangenoob/pokedexcli/internal/pokeapi"
 	"github.com/strangenoob/pokedexcli/internal/pokedex"
 )
 
 type config struct {
-	client     *pokeapi.Client
-	dex        *pokedex.Pokedex
-	savePath   string
-	rng        *rand.Rand
-	nextLocURL *string
-	prevLocURL *string
+	client      *pokeapi.Client
+	dex         *pokedex.Pokedex
+	savePath    string
+	rng         *rand.Rand
+	nextLocURL  *string
+	prevLocURL  *string
+	areaPokemon []string
+	wildTarget  string
 }
 
 type cliCommand struct {
@@ -26,17 +29,19 @@ type cliCommand struct {
 
 func getCommands() map[string]cliCommand {
 	return map[string]cliCommand{
-		"exit":    {"exit", "Exit the Pokedex", commandExit},
-		"help":    {"help", "Display a help message", commandHelp},
-		"map":     {"map", "Display the next 20 location areas", commandMap},
-		"mapb":    {"mapb", "Display the previous 20 location areas", commandMapb},
-		"explore": {"explore", "Explore a location area and list the Pokemon there", commandExplore},
-		"catch":   {"catch", "Attempt to catch a Pokemon", commandCatch},
-		"inspect": {"inspect", "Inspect a Pokemon you have caught", commandInspect},
-		"pokedex": {"pokedex", "List all caught Pokemon", commandPokedex},
-		"party":   {"party", "Show party, or 'party add|remove <name>'", commandParty},
-		"battle":  {"battle", "Battle two caught Pokemon: battle <a> <b>", commandBattle},
-		"save":    {"save", "Save your progress to disk", commandSave},
+		"exit":      {"exit", "Exit the Pokedex", commandExit},
+		"help":      {"help", "Display a help message", commandHelp},
+		"map":       {"map", "Display the next 20 location areas", commandMap},
+		"mapb":      {"mapb", "Display the previous 20 location areas", commandMapb},
+		"explore":   {"explore", "Explore a location area and list the Pokemon there", commandExplore},
+		"catch":     {"catch", "Catch a Pokemon: catch [name] [ball]", commandCatch},
+		"inspect":   {"inspect", "Inspect a Pokemon you have caught", commandInspect},
+		"pokedex":   {"pokedex", "List all caught Pokemon", commandPokedex},
+		"party":     {"party", "Show party, or 'party add|remove <name>'", commandParty},
+		"battle":    {"battle", "Battle two caught Pokemon: battle <a> <b>", commandBattle},
+		"encounter": {"encounter", "Find a random wild Pokemon in the explored area", commandEncounter},
+		"bag":       {"bag", "Show your Pokeball inventory", commandBag},
+		"save":      {"save", "Save your progress to disk", commandSave},
 	}
 }
 
@@ -101,34 +106,70 @@ func commandExplore(cfg *config, args []string) error {
 	}
 	fmt.Printf("Exploring %s...\n", args[0])
 	fmt.Println("Found Pokemon:")
+	names := make([]string, 0, len(area.PokemonEncounters))
 	for _, e := range area.PokemonEncounters {
 		fmt.Printf(" - %s\n", e.Pokemon.Name)
+		names = append(names, e.Pokemon.Name)
 	}
+	cfg.areaPokemon = names
 	return nil
 }
 
 func commandCatch(cfg *config, args []string) error {
-	if len(args) == 0 {
-		return fmt.Errorf("you must provide a pokemon name")
+	name, ballName, err := parseCatchArgs(args, cfg.wildTarget)
+	if err != nil {
+		return err
 	}
-	name := args[0]
-	fmt.Printf("Throwing a Pokeball at %s...\n", name)
+	if cfg.dex.BallCount(ballName) <= 0 {
+		return fmt.Errorf("you have no %s left", ballName)
+	}
 
 	pokemon, err := cfg.client.FetchPokemon(name)
 	if err != nil {
 		return err
 	}
 
-	chance := 100 - (pokemon.BaseExperience / 4)
-	if chance < 5 {
-		chance = 5
+	if err := cfg.dex.UseBall(ballName); err != nil {
+		return err
 	}
+	fmt.Printf("Throwing a %s at %s...\n", ballName, name)
+
+	base := 100 - (pokemon.BaseExperience / 4)
+	if base < 5 {
+		base = 5
+	}
+	chance := int(float64(base) * ball.Multiplier(ballName))
+	if chance > 100 {
+		chance = 100
+	}
+
 	if cfg.rng.Intn(100) < chance {
 		cfg.dex.Add(pokemon)
 		fmt.Printf("%s was caught!\n", pokemon.Name)
-		autoSave(cfg)
+		if name == cfg.wildTarget {
+			cfg.wildTarget = ""
+		}
 	} else {
 		fmt.Printf("%s escaped!\n", pokemon.Name)
+	}
+	autoSave(cfg)
+	return nil
+}
+
+func commandEncounter(cfg *config, args []string) error {
+	if len(cfg.areaPokemon) == 0 {
+		return fmt.Errorf("explore an area first")
+	}
+	cfg.wildTarget = randomChoice(cfg.areaPokemon, cfg.rng)
+	fmt.Printf("A wild %s appeared!\n", cfg.wildTarget)
+	fmt.Println("Use 'catch' to throw a ball at it.")
+	return nil
+}
+
+func commandBag(cfg *config, args []string) error {
+	fmt.Println("Your bag:")
+	for _, name := range ball.Names() {
+		fmt.Printf(" - %s: %d\n", name, cfg.dex.BallCount(name))
 	}
 	return nil
 }
