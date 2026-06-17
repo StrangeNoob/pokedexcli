@@ -3,6 +3,7 @@ package pokedex
 import (
 	"fmt"
 
+	"github.com/strangenoob/pokedexcli/internal/ball"
 	"github.com/strangenoob/pokedexcli/internal/pokeapi"
 )
 
@@ -20,10 +21,35 @@ type CaughtPokemon struct {
 type Pokedex struct {
 	Caught map[string]*CaughtPokemon `json:"caught"`
 	Party  []string                  `json:"party"`
+	Balls  map[string]int            `json:"balls"`
+}
+
+// StartingBalls returns a fresh starting ball inventory.
+func StartingBalls() map[string]int {
+	return map[string]int{"pokeball": 20, "greatball": 10, "ultraball": 5}
 }
 
 func New() *Pokedex {
-	return &Pokedex{Caught: make(map[string]*CaughtPokemon)}
+	return &Pokedex{
+		Caught: make(map[string]*CaughtPokemon),
+		Balls:  StartingBalls(),
+	}
+}
+
+func (p *Pokedex) BallCount(name string) int {
+	return p.Balls[name]
+}
+
+// UseBall consumes one ball of the given type.
+func (p *Pokedex) UseBall(name string) error {
+	if !ball.IsValid(name) {
+		return fmt.Errorf("unknown ball type %q", name)
+	}
+	if p.Balls[name] <= 0 {
+		return fmt.Errorf("you have no %s left", name)
+	}
+	p.Balls[name]--
+	return nil
 }
 
 func (p *Pokedex) Add(base pokeapi.Pokemon) *CaughtPokemon {

@@ -43,5 +43,8 @@ func Load(path string) (*Pokedex, error) {
 	if p.Caught == nil {
 		p.Caught = make(map[string]*CaughtPokemon)
 	}
+	if p.Balls == nil {
+		p.Balls = StartingBalls()
+	}
 	return &p, nil
 }
