@@ -1,0 +1,27 @@
+# Compiled binary
+/pokedexcli
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of `go tool cover`
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Log files
+*.log
+
+# Dependency directory
+vendor/
+
+# Environment variables
+.env
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
