@@ -104,7 +104,7 @@ func (m pokedexModel) View() string {
 	cp, _ := m.deps.Dex.Get(m.names[m.cursor])
 	detail := detailView(cp, m.deps.Dex.InParty(cp.Base.Name))
 	if art := m.deps.Art.get(cp.Base.Name); art != "" {
-		detail = art + "\n" + detail
+		detail = lipgloss.JoinHorizontal(lipgloss.Top, art, "  ", detail)
 	}
 	body := lipgloss.JoinHorizontal(lipgloss.Top,
 		boxStyle.Render(list.String()),
