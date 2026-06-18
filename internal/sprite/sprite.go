@@ -61,13 +61,15 @@ func Render(data []byte, maxWidth int) (string, error) {
 		for ox := 0; ox < outW; ox++ {
 			tr, tg, tb, top := sample(ox, row*2)
 			br, bg, bb, bot := sample(ox, row*2+1)
+			// \x1b[49m resets the background to the terminal default so
+			// transparent halves never inherit the previous cell's color.
 			switch {
 			case !top && !bot:
-				sb.WriteByte(' ')
+				sb.WriteString("\x1b[49m ")
 			case top && !bot:
-				fmt.Fprintf(&sb, "\x1b[38;2;%d;%d;%dm▀", tr, tg, tb)
+				fmt.Fprintf(&sb, "\x1b[38;2;%d;%d;%dm\x1b[49m▀", tr, tg, tb)
 			case !top && bot:
-				fmt.Fprintf(&sb, "\x1b[38;2;%d;%d;%dm▄", br, bg, bb)
+				fmt.Fprintf(&sb, "\x1b[38;2;%d;%d;%dm\x1b[49m▄", br, bg, bb)
 			default:
 				fmt.Fprintf(&sb, "\x1b[38;2;%d;%d;%dm\x1b[48;2;%d;%d;%dm▀", tr, tg, tb, br, bg, bb)
 			}

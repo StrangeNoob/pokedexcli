@@ -53,6 +53,24 @@ func TestRenderTransparent(t *testing.T) {
 	}
 }
 
+func TestRenderResetsBackgroundOnTransparency(t *testing.T) {
+	// A column with an opaque pixel directly above a transparent pixel must reset
+	// the background on that half-block so it cannot inherit a neighbor's color.
+	// Opaque pixels above and below keep the transparent pixel inside the crop box.
+	img := image.NewRGBA(image.Rect(0, 0, 1, 3))
+	img.Set(0, 0, color.RGBA{255, 0, 0, 255})
+	// (0,1) left transparent
+	img.Set(0, 2, color.RGBA{255, 0, 0, 255})
+
+	out, err := Render(encodePNG(t, img), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "\x1b[38;2;255;0;0m\x1b[49m▀") {
+		t.Errorf("expected red top half with a background reset, got %q", out)
+	}
+}
+
 func TestRenderMalformed(t *testing.T) {
 	if _, err := Render([]byte("not a png"), 10); err == nil {
 		t.Fatal("expected an error for malformed input")
