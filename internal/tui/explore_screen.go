@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/strangenoob/pokedexcli/internal/ball"
 	"github.com/strangenoob/pokedexcli/internal/pokeapi"
@@ -266,11 +267,8 @@ func (m exploreModel) View() string {
 		b.WriteString("\n" + helpStyle.Render("↑/↓ move · enter explore · n/b page · esc back"))
 	case wildListStep:
 		b.WriteString(titleStyle.Render("Explore: "+m.areaName) + "\n\n")
-		if len(m.wild) > 0 {
-			if art := m.deps.Art.get(m.wild[m.wildCur]); art != "" {
-				b.WriteString(art + "\n")
-			}
-		}
+
+		var list strings.Builder
 		for i, name := range m.wild {
 			cursor := "  "
 			line := name
@@ -278,17 +276,54 @@ func (m exploreModel) View() string {
 				cursor = "▸ "
 				line = selectedStyle.Render(line)
 			}
-			b.WriteString(cursor + line + "\n")
+			list.WriteString(cursor + line + "\n")
 		}
 		ballName := ball.Names()[m.ballIdx]
-		b.WriteString(fmt.Sprintf("\nBall: ‹ %s ›  (you have %d)\n", ballName, m.deps.Dex.BallCount(ballName)))
+		fmt.Fprintf(&list, "\nBall: ‹ %s ›  (you have %d)\n", ballName, m.deps.Dex.BallCount(ballName))
 		if m.loading {
-			b.WriteString(m.spinner.View() + " throwing…\n")
+			list.WriteString(m.spinner.View() + " throwing…\n")
+		}
+
+		if len(m.wild) > 0 {
+			name := m.wild[m.wildCur]
+			detail := []string{}
+			if art := m.deps.Art.get(name); art != "" {
+				detail = append(detail, art)
+			}
+			if p, ok := m.deps.Art.poke(name); ok {
+				detail = append(detail, wildStatsView(p))
+			} else {
+				detail = append(detail, dimStyle.Render("loading stats…"))
+			}
+			b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top,
+				boxStyle.Render(list.String()),
+				"  ",
+				boxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, detail...))))
+		} else {
+			b.WriteString(boxStyle.Render(list.String()))
 		}
 		b.WriteString("\n" + helpStyle.Render("↑/↓ pick · ←/→ ball · enter throw · backspace areas · esc back"))
 	}
 	if m.status != "" {
 		b.WriteString("\n" + statusStyle.Render(m.status))
 	}
+	return b.String()
+}
+
+// wildStatsView renders a wild Pokémon's base stats, types, and size.
+func wildStatsView(p pokeapi.Pokemon) string {
+	var b strings.Builder
+	b.WriteString(p.Name + "\n")
+
+	types := make([]string, 0, len(p.Types))
+	for _, t := range p.Types {
+		types = append(types, t.Type.Name)
+	}
+	b.WriteString("Types: " + strings.Join(types, ", ") + "\n")
+
+	for _, s := range p.Stats {
+		fmt.Fprintf(&b, "%-15s %3d\n", s.Stat.Name, s.BaseStat)
+	}
+	fmt.Fprintf(&b, "Height %d  Weight %d", p.Height, p.Weight)
 	return b.String()
 }

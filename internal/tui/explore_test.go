@@ -7,6 +7,35 @@ import (
 	"github.com/strangenoob/pokedexcli/internal/pokeapi"
 )
 
+func TestExploreCachesWildStats(t *testing.T) {
+	d := testDeps()
+	m := newExploreModel(d)
+	_, _ = m.Update(artLoadedMsg{
+		name:    "magikarp",
+		art:     "ART",
+		pokemon: pokeapi.Pokemon{Name: "magikarp", Height: 9},
+	})
+	p, ok := d.Art.poke("magikarp")
+	if !ok || p.Height != 9 {
+		t.Fatalf("wild stats not cached: %+v ok=%v", p, ok)
+	}
+}
+
+func TestWildStatsViewShowsStats(t *testing.T) {
+	p := pokeapi.Pokemon{Name: "magikarp", Height: 9, Weight: 100}
+	p.Stats = []pokeapi.Stat{{BaseStat: 20}}
+	p.Stats[0].Stat.Name = "hp"
+	p.Types = []pokeapi.TypeSlot{{}}
+	p.Types[0].Type.Name = "water"
+
+	out := wildStatsView(p)
+	for _, want := range []string{"magikarp", "water", "hp", "20", "Height 9"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("stats view missing %q in %q", want, out)
+		}
+	}
+}
+
 func TestExploreAreasLoaded(t *testing.T) {
 	m := newExploreModel(testDeps())
 	updated, _ := m.Update(areasLoadedMsg{areas: []string{"area-a", "area-b"}})
