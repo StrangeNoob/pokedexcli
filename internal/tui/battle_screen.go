@@ -254,18 +254,27 @@ func (m battleModel) battlefieldView() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, "   ", right)
 }
 
-// combatantPanel stacks a fixed-size sprite box above its name, level, and HP bar.
+// combatantPanel places a fixed-size sprite box beside the combatant's stats.
 func (m battleModel) combatantPanel(name string, hp, maxHP, artH int) string {
 	placed := lipgloss.Place(artWidth, artH, lipgloss.Center, lipgloss.Center, m.deps.Art.get(name))
 	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Render(placed)
+	return lipgloss.JoinHorizontal(lipgloss.Top, box, "  ", m.combatantStats(name, hp, maxHP))
+}
 
-	lvl := 0
+// combatantStats renders the combatant's name, level, live HP bar, and battle stats.
+func (m battleModel) combatantStats(name string, hp, maxHP int) string {
+	lvl, atk, def, spd, types := 0, 0, 0, 0, ""
 	if cp, ok := m.deps.Dex.Get(name); ok {
-		lvl = cp.Level
+		lvl, atk, def, spd = cp.Level, cp.Attack(), cp.Defense(), cp.Speed()
+		types = strings.Join(cp.TypeNames(), ", ")
 	}
-	header := fmt.Sprintf("%s  Lv%d", name, lvl)
-	bar := fmt.Sprintf("%s  %d/%d", hpBar(hp, maxHP, 16), hp, maxHP)
-	return lipgloss.JoinVertical(lipgloss.Left, box, header, bar)
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s  Lv%d\n", name, lvl)
+	fmt.Fprintf(&b, "%s  %d/%d\n", hpBar(hp, maxHP, 14), hp, maxHP)
+	fmt.Fprintf(&b, "ATK %3d  DEF %3d\n", atk, def)
+	fmt.Fprintf(&b, "SPD %3d\n", spd)
+	b.WriteString("Types: " + types)
+	return b.String()
 }
 
 func renderChoiceList(items []string, cursor int) string {
