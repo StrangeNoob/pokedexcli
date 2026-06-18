@@ -14,6 +14,7 @@ type Deps struct {
 	Client   *pokeapi.Client
 	RNG      *rand.Rand
 	SavePath string
+	Art      *ArtStore
 }
 
 func Run(deps Deps) error {

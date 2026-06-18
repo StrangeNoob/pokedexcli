@@ -39,6 +39,7 @@ func main() {
 			Client:   pokeapi.NewClient(pokecache.NewCache(5 * time.Second)),
 			RNG:      rand.New(rand.NewSource(time.Now().UnixNano())),
 			SavePath: savePath,
+			Art:      tui.NewArtStore(),
 		}
 		if err := tui.Run(deps); err != nil {
 			fmt.Println("Error:", err)

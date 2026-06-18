@@ -18,6 +18,7 @@ func testDeps() Deps {
 		Client:   nil,
 		RNG:      rand.New(rand.NewSource(1)),
 		SavePath: filepath.Join(os.TempDir(), "pokedexcli-tui-test.json"),
+		Art:      NewArtStore(),
 	}
 }
 
