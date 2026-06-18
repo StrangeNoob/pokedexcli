@@ -74,7 +74,16 @@ func hpBar(cur, max, width int) string {
 	if filled > width {
 		filled = width
 	}
-	return strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
+	ratio := float64(cur) / float64(max)
+	barColor := lipgloss.Color("42") // green
+	if ratio < 0.5 {
+		barColor = lipgloss.Color("214") // yellow
+	}
+	if ratio < 0.25 {
+		barColor = lipgloss.Color("196") // red
+	}
+	return lipgloss.NewStyle().Foreground(barColor).Render(strings.Repeat("█", filled)) +
+		dimStyle.Render(strings.Repeat("░", width-filled))
 }
 
 func (m battleModel) applyTurn(tn battle.TurnEvent) battleModel {
@@ -210,15 +219,7 @@ func (m battleModel) View() string {
 		b.WriteString(renderChoiceList(m.secondList, m.cursor))
 		b.WriteString("\n" + helpStyle.Render("↑/↓ move · enter pick · esc back"))
 	case animateStep, doneStep:
-		aArt := m.deps.Art.get(m.aName)
-		bArt := m.deps.Art.get(m.bName)
-		if aArt != "" || bArt != "" {
-			b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top,
-				boxStyle.Render(aArt), boxStyle.Render(bArt)) + "\n")
-		}
-		b.WriteString(fmt.Sprintf("%-12s %s %d/%d\n", m.aName, hpBar(m.aHP, m.aMaxHP, 12), m.aHP, m.aMaxHP))
-		b.WriteString(fmt.Sprintf("%-12s %s %d/%d\n", m.bName, hpBar(m.bHP, m.bMaxHP, 12), m.bHP, m.bMaxHP))
-		b.WriteString("\n")
+		b.WriteString(m.battlefieldView() + "\n\n")
 		shown := m.turnIdx + 1
 		if m.step == doneStep {
 			shown = len(m.result.Log)
@@ -240,6 +241,32 @@ func (m battleModel) View() string {
 		b.WriteString("\n" + statusStyle.Render(m.status))
 	}
 	return b.String()
+}
+
+// battlefieldView renders the two combatants as equal-size side-by-side panels.
+func (m battleModel) battlefieldView() string {
+	h := lipgloss.Height(m.deps.Art.get(m.aName))
+	if hb := lipgloss.Height(m.deps.Art.get(m.bName)); hb > h {
+		h = hb
+	}
+	left := m.combatantPanel(m.aName, m.aHP, m.aMaxHP, h)
+	right := m.combatantPanel(m.bName, m.bHP, m.bMaxHP, h)
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, "   ", right)
+}
+
+// combatantPanel stacks a fixed-size sprite box above its name, level, and HP bar.
+func (m battleModel) combatantPanel(name string, hp, maxHP, artH int) string {
+	const w = 20
+	placed := lipgloss.Place(w, artH, lipgloss.Center, lipgloss.Center, m.deps.Art.get(name))
+	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Render(placed)
+
+	lvl := 0
+	if cp, ok := m.deps.Dex.Get(name); ok {
+		lvl = cp.Level
+	}
+	header := fmt.Sprintf("%s  Lv%d", name, lvl)
+	bar := fmt.Sprintf("%s  %d/%d", hpBar(hp, maxHP, w), hp, maxHP)
+	return lipgloss.JoinVertical(lipgloss.Left, box, header, bar)
 }
 
 func renderChoiceList(items []string, cursor int) string {
