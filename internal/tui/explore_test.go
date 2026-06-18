@@ -51,6 +51,15 @@ func TestExploreFetchErrorDoesNotSpendBall(t *testing.T) {
 	}
 }
 
+func TestExploreStoresArt(t *testing.T) {
+	d := testDeps()
+	m := newExploreModel(d)
+	_, _ = m.Update(artLoadedMsg{name: "magikarp", art: "ART"})
+	if d.Art.get("magikarp") != "ART" {
+		t.Fatal("explore should store art via the shared store")
+	}
+}
+
 var errTest = stringError("boom")
 
 type stringError string

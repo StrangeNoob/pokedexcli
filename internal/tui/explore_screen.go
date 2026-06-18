@@ -107,6 +107,9 @@ func (m exploreModel) catchCmd(name, ballName string) tea.Cmd {
 
 func (m exploreModel) Update(msg tea.Msg) (screenModel, tea.Cmd) {
 	switch msg := msg.(type) {
+	case artLoadedMsg:
+		m.deps.Art.handle(msg)
+		return m, nil
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -134,7 +137,7 @@ func (m exploreModel) Update(msg tea.Msg) (screenModel, tea.Cmd) {
 		m.wild = msg.names
 		m.wildCur = 0
 		m.step = wildListStep
-		return m, nil
+		return m, m.requestWildArt()
 	case pokemonFetchedMsg:
 		m.loading = false
 		if msg.err != nil {
@@ -203,10 +206,12 @@ func (m exploreModel) handleKey(key tea.KeyMsg) (screenModel, tea.Cmd) {
 			if m.wildCur > 0 {
 				m.wildCur--
 			}
+			return m, m.requestWildArt()
 		case "down", "j":
 			if m.wildCur < len(m.wild)-1 {
 				m.wildCur++
 			}
+			return m, m.requestWildArt()
 		case "left", "h":
 			if m.ballIdx > 0 {
 				m.ballIdx--
@@ -234,6 +239,13 @@ func (m exploreModel) handleKey(key tea.KeyMsg) (screenModel, tea.Cmd) {
 	return m, nil
 }
 
+func (m exploreModel) requestWildArt() tea.Cmd {
+	if m.step != wildListStep || len(m.wild) == 0 {
+		return nil
+	}
+	return m.deps.Art.request(m.deps, m.wild[m.wildCur])
+}
+
 func (m exploreModel) View() string {
 	var b strings.Builder
 	switch m.step {
@@ -254,6 +266,11 @@ func (m exploreModel) View() string {
 		b.WriteString("\n" + helpStyle.Render("↑/↓ move · enter explore · n/b page · esc back"))
 	case wildListStep:
 		b.WriteString(titleStyle.Render("Explore: "+m.areaName) + "\n\n")
+		if len(m.wild) > 0 {
+			if art := m.deps.Art.get(m.wild[m.wildCur]); art != "" {
+				b.WriteString(art + "\n")
+			}
+		}
 		for i, name := range m.wild {
 			cursor := "  "
 			line := name
