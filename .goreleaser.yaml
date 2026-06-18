@@ -1,0 +1,59 @@
+# GoReleaser configuration — https://goreleaser.com
+version: 2
+
+project_name: pokedexcli
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: pokedexcli
+    main: .
+    binary: pokedexcli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    # Use zip for Windows archives.
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: StrangeNoob
+    name: pokedexcli
+  draft: false
+  prerelease: auto

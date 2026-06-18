@@ -17,6 +17,9 @@ import (
 // osExit is indirected so commandExit stays testable.
 var osExit = os.Exit
 
+// version is overridden at release time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func loadGame() (*pokedex.Pokedex, string) {
 	savePath, err := pokedex.DefaultSavePath()
 	if err != nil {
@@ -32,6 +35,11 @@ func loadGame() (*pokedex.Pokedex, string) {
 }
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "version" || os.Args[1] == "--version") {
+		fmt.Printf("pokedexcli %s\n", version)
+		return
+	}
+
 	if len(os.Args) > 1 && os.Args[1] == "tui" {
 		dex, savePath := loadGame()
 		deps := tui.Deps{
