@@ -14,10 +14,18 @@ type Combatant struct {
 	Types   []string
 }
 
+type TurnEvent struct {
+	Attacker   string
+	Defender   string
+	Damage     int
+	DefenderHP int
+}
+
 type Result struct {
 	Winner string
 	Loser  string
 	Log    []string
+	Turns  []TurnEvent
 }
 
 func damage(attacker, defender Combatant, rng *rand.Rand) int {
@@ -45,6 +53,7 @@ func Simulate(a, b Combatant, rng *rand.Rand) Result {
 	}
 
 	log := []string{fmt.Sprintf("%s (HP %d) vs %s (HP %d)!", first.Name, first.HP, second.Name, second.HP)}
+	turns := []TurnEvent{}
 
 	attacker, defender := &first, &second
 	for first.HP > 0 && second.HP > 0 {
@@ -55,6 +64,12 @@ func Simulate(a, b Combatant, rng *rand.Rand) Result {
 		}
 		log = append(log, fmt.Sprintf("%s hits %s for %d (HP %d left)",
 			attacker.Name, defender.Name, dmg, defender.HP))
+		turns = append(turns, TurnEvent{
+			Attacker:   attacker.Name,
+			Defender:   defender.Name,
+			Damage:     dmg,
+			DefenderHP: defender.HP,
+		})
 		attacker, defender = defender, attacker
 	}
 
@@ -63,5 +78,5 @@ func Simulate(a, b Combatant, rng *rand.Rand) Result {
 		winner, loser = second, first
 	}
 	log = append(log, fmt.Sprintf("%s wins!", winner.Name))
-	return Result{Winner: winner.Name, Loser: loser.Name, Log: log}
+	return Result{Winner: winner.Name, Loser: loser.Name, Log: log, Turns: turns}
 }
