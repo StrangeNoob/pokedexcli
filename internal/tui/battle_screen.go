@@ -273,7 +273,8 @@ func (m battleModel) battlefieldView() string {
 	}
 	left := m.combatantPanel(m.aName, m.aHP, m.aMaxHP, h)
 	right := m.combatantPanel(m.bName, m.bHP, m.bMaxHP, h)
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, "   ", right)
+	divider := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196")).Render("  VS  ")
+	return lipgloss.JoinHorizontal(lipgloss.Center, left, divider, right)
 }
 
 // combatantPanel places a fixed-size sprite box beside the combatant's stats.
