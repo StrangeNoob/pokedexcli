@@ -50,7 +50,24 @@ func newBattleModel(deps Deps) battleModel {
 	return battleModel{deps: deps, step: pickFirstStep, names: sortedCaught(deps.Dex)}
 }
 
-func (m battleModel) Init() tea.Cmd { return nil }
+func (m battleModel) Init() tea.Cmd { return m.requestSelectionArt() }
+
+// requestSelectionArt loads art for the currently highlighted selection list entry.
+func (m battleModel) requestSelectionArt() tea.Cmd {
+	var items []string
+	switch m.step {
+	case pickFirstStep:
+		items = m.names
+	case pickSecondStep:
+		items = m.secondList
+	default:
+		return nil
+	}
+	if len(items) == 0 || m.cursor >= len(items) {
+		return nil
+	}
+	return m.deps.Art.request(m.deps, items[m.cursor])
+}
 
 func toCombatantTUI(cp *pokedex.CaughtPokemon) battle.Combatant {
 	return battle.Combatant{
@@ -162,10 +179,12 @@ func (m battleModel) handleKey(key tea.KeyMsg) (screenModel, tea.Cmd) {
 			if m.cursor > 0 {
 				m.cursor--
 			}
+			return m, m.requestSelectionArt()
 		case "down", "j":
 			if m.cursor < len(m.names)-1 {
 				m.cursor++
 			}
+			return m, m.requestSelectionArt()
 		case "enter":
 			if len(m.names) < 2 {
 				m.status = "You need at least 2 caught Pokémon"
@@ -180,6 +199,7 @@ func (m battleModel) handleKey(key tea.KeyMsg) (screenModel, tea.Cmd) {
 			}
 			m.cursor = 0
 			m.step = pickSecondStep
+			return m, m.requestSelectionArt()
 		}
 	case pickSecondStep:
 		switch key.String() {
@@ -187,10 +207,12 @@ func (m battleModel) handleKey(key tea.KeyMsg) (screenModel, tea.Cmd) {
 			if m.cursor > 0 {
 				m.cursor--
 			}
+			return m, m.requestSelectionArt()
 		case "down", "j":
 			if m.cursor < len(m.secondList)-1 {
 				m.cursor++
 			}
+			return m, m.requestSelectionArt()
 		case "enter":
 			return m.startBattle(m.firstName, m.secondList[m.cursor])
 		}
@@ -212,11 +234,11 @@ func (m battleModel) View() string {
 	switch m.step {
 	case pickFirstStep:
 		b.WriteString("Choose your Pokémon:\n\n")
-		b.WriteString(renderChoiceList(m.names, m.cursor))
+		b.WriteString(m.selectionView(m.names))
 		b.WriteString("\n" + helpStyle.Render("↑/↓ move · enter pick · esc back"))
 	case pickSecondStep:
 		b.WriteString(fmt.Sprintf("First: %s. Choose the opponent:\n\n", m.firstName))
-		b.WriteString(renderChoiceList(m.secondList, m.cursor))
+		b.WriteString(m.selectionView(m.secondList))
 		b.WriteString("\n" + helpStyle.Render("↑/↓ move · enter pick · esc back"))
 	case animateStep, doneStep:
 		b.WriteString(m.battlefieldView() + "\n\n")
@@ -274,6 +296,46 @@ func (m battleModel) combatantStats(name string, hp, maxHP int) string {
 	fmt.Fprintf(&b, "ATK %3d  DEF %3d\n", atk, def)
 	fmt.Fprintf(&b, "SPD %3d\n", spd)
 	b.WriteString("Types: " + types)
+	return b.String()
+}
+
+// selectionView renders the choice list beside a preview of the highlighted entry.
+func (m battleModel) selectionView(items []string) string {
+	left := boxStyle.Render(renderChoiceList(items, m.cursor))
+	if len(items) == 0 || m.cursor >= len(items) {
+		return left
+	}
+	preview := m.selectionPreview(items[m.cursor])
+	if preview == "" {
+		return left
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, "  ", boxStyle.Render(preview))
+}
+
+// selectionPreview shows a caught Pokémon's stats, with its sprite beside them
+// once the art has loaded.
+func (m battleModel) selectionPreview(name string) string {
+	stats := m.statBlock(name)
+	art := m.deps.Art.get(name)
+	if art == "" {
+		return stats
+	}
+	placed := lipgloss.Place(artWidth, lipgloss.Height(art), lipgloss.Center, lipgloss.Center, art)
+	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Render(placed)
+	return lipgloss.JoinHorizontal(lipgloss.Top, box, "  ", stats)
+}
+
+// statBlock renders a caught Pokémon's level, stats, and types.
+func (m battleModel) statBlock(name string) string {
+	cp, ok := m.deps.Dex.Get(name)
+	if !ok {
+		return ""
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s  Lv%d\n", name, cp.Level)
+	fmt.Fprintf(&b, "HP  %3d  ATK %3d\n", cp.HP(), cp.Attack())
+	fmt.Fprintf(&b, "DEF %3d  SPD %3d\n", cp.Defense(), cp.Speed())
+	b.WriteString("Types: " + strings.Join(cp.TypeNames(), ", "))
 	return b.String()
 }
 
