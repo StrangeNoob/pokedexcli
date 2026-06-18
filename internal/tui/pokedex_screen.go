@@ -31,9 +31,20 @@ func sortedCaught(dex *pokedex.Pokedex) []string {
 	return names
 }
 
-func (m pokedexModel) Init() tea.Cmd { return nil }
+func (m pokedexModel) Init() tea.Cmd { return m.requestCurrentArt() }
+
+func (m pokedexModel) requestCurrentArt() tea.Cmd {
+	if len(m.names) == 0 {
+		return nil
+	}
+	return m.deps.Art.request(m.deps, m.names[m.cursor])
+}
 
 func (m pokedexModel) Update(msg tea.Msg) (screenModel, tea.Cmd) {
+	if art, ok := msg.(artLoadedMsg); ok {
+		m.deps.Art.handle(art)
+		return m, nil
+	}
 	key, ok := msg.(tea.KeyMsg)
 	if !ok {
 		return m, nil
@@ -43,10 +54,12 @@ func (m pokedexModel) Update(msg tea.Msg) (screenModel, tea.Cmd) {
 		if m.cursor > 0 {
 			m.cursor--
 		}
+		return m, m.requestCurrentArt()
 	case "down", "j":
 		if m.cursor < len(m.names)-1 {
 			m.cursor++
 		}
+		return m, m.requestCurrentArt()
 	case "p":
 		if len(m.names) == 0 {
 			return m, nil
@@ -89,9 +102,13 @@ func (m pokedexModel) View() string {
 	}
 
 	cp, _ := m.deps.Dex.Get(m.names[m.cursor])
+	detail := detailView(cp, m.deps.Dex.InParty(cp.Base.Name))
+	if art := m.deps.Art.get(cp.Base.Name); art != "" {
+		detail = art + "\n" + detail
+	}
 	body := lipgloss.JoinHorizontal(lipgloss.Top,
 		boxStyle.Render(list.String()),
-		boxStyle.Render(detailView(cp, m.deps.Dex.InParty(cp.Base.Name))),
+		boxStyle.Render(detail),
 	)
 
 	out := titleStyle.Render("Pokédex") + "\n\n" + body + "\n"
