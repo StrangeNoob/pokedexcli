@@ -50,6 +50,11 @@ func (c *Client) fetch(url string) ([]byte, error) {
 	return body, nil
 }
 
+// FetchImage returns raw bytes (e.g. a sprite PNG) from url, using the cache.
+func (c *Client) FetchImage(url string) ([]byte, error) {
+	return c.fetch(url)
+}
+
 func (c *Client) FetchLocationAreas(pageURL *string) (LocationAreas, error) {
 	url := c.baseURL + "/location-area"
 	if pageURL != nil {

@@ -14,6 +14,10 @@ type TypeSlot struct {
 	} `json:"type"`
 }
 
+type Sprites struct {
+	FrontDefault string `json:"front_default"`
+}
+
 type Pokemon struct {
 	Name           string     `json:"name"`
 	BaseExperience int        `json:"base_experience"`
@@ -21,6 +25,7 @@ type Pokemon struct {
 	Weight         int        `json:"weight"`
 	Stats          []Stat     `json:"stats"`
 	Types          []TypeSlot `json:"types"`
+	Sprites        Sprites    `json:"sprites"`
 }
 
 type LocationAreas struct {
