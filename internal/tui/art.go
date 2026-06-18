@@ -8,7 +8,7 @@ import (
 	"github.com/strangenoob/pokedexcli/internal/sprite"
 )
 
-const artWidth = 20
+const artWidth = 32
 
 type artLoadedMsg struct {
 	name string

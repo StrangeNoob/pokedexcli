@@ -256,8 +256,7 @@ func (m battleModel) battlefieldView() string {
 
 // combatantPanel stacks a fixed-size sprite box above its name, level, and HP bar.
 func (m battleModel) combatantPanel(name string, hp, maxHP, artH int) string {
-	const w = 20
-	placed := lipgloss.Place(w, artH, lipgloss.Center, lipgloss.Center, m.deps.Art.get(name))
+	placed := lipgloss.Place(artWidth, artH, lipgloss.Center, lipgloss.Center, m.deps.Art.get(name))
 	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Render(placed)
 
 	lvl := 0
@@ -265,7 +264,7 @@ func (m battleModel) combatantPanel(name string, hp, maxHP, artH int) string {
 		lvl = cp.Level
 	}
 	header := fmt.Sprintf("%s  Lv%d", name, lvl)
-	bar := fmt.Sprintf("%s  %d/%d", hpBar(hp, maxHP, w), hp, maxHP)
+	bar := fmt.Sprintf("%s  %d/%d", hpBar(hp, maxHP, 16), hp, maxHP)
 	return lipgloss.JoinVertical(lipgloss.Left, box, header, bar)
 }
 
