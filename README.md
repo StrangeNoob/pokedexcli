@@ -13,6 +13,16 @@ sprite as colored terminal art.
 Powered by [PokeAPI](https://pokeapi.co) and built with
 [Bubble Tea](https://github.com/charmbracelet/bubbletea).
 
+## Demo
+
+![Pokédex CLI REPL demo](assets/demo.gif)
+
+> A quick tour of the REPL — explore an area, catch a Pokémon, inspect it, then
+> check your bag and Pokédex. Run `pokedexcli tui` for the full-screen interface
+> with colored sprite art and animated battles.
+>
+> _Recorded with [asciinema](https://github.com/asciinema/asciinema) and rendered to a GIF with [agg](https://github.com/asciinema/agg) (`make demo`)._
+
 ## Features
 
 - 🗺️ **Explore** location areas and discover the wild Pokémon there
