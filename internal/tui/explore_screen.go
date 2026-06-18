@@ -286,19 +286,15 @@ func (m exploreModel) View() string {
 
 		if len(m.wild) > 0 {
 			name := m.wild[m.wildCur]
-			detail := []string{}
-			if art := m.deps.Art.get(name); art != "" {
-				detail = append(detail, art)
-			}
+			stats := dimStyle.Render("loading stats…")
 			if p, ok := m.deps.Art.poke(name); ok {
-				detail = append(detail, wildStatsView(p))
-			} else {
-				detail = append(detail, dimStyle.Render("loading stats…"))
+				stats = wildStatsView(p)
 			}
+			detail := lipgloss.JoinHorizontal(lipgloss.Top, m.deps.Art.get(name), "  ", stats)
 			b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top,
 				boxStyle.Render(list.String()),
 				"  ",
-				boxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, detail...))))
+				boxStyle.Render(detail)))
 		} else {
 			b.WriteString(boxStyle.Render(list.String()))
 		}
