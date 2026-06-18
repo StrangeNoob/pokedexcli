@@ -54,6 +54,15 @@ func TestBattleSkipAwardsXP(t *testing.T) {
 	}
 }
 
+func TestBattleStoresArt(t *testing.T) {
+	d := testDeps()
+	m := newBattleModel(d)
+	_, _ = m.Update(artLoadedMsg{name: "pikachu", art: "ART"})
+	if d.Art.get("pikachu") != "ART" {
+		t.Fatal("battle should store art via the shared store")
+	}
+}
+
 func TestBattleTickAdvances(t *testing.T) {
 	d := testDeps()
 	d.Dex.Add(statPokemon("alpha", 200, 90, 30, 60))

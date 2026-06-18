@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/strangenoob/pokedexcli/internal/battle"
 	"github.com/strangenoob/pokedexcli/internal/pokedex"
@@ -97,7 +98,11 @@ func (m battleModel) startBattle(aName, bName string) (screenModel, tea.Cmd) {
 	m.bMaxHP, m.bHP = cb.HP, cb.HP
 	m.turnIdx = 0
 	m.step = animateStep
-	return m, battleTick()
+	return m, tea.Batch(
+		battleTick(),
+		m.deps.Art.request(m.deps, aName),
+		m.deps.Art.request(m.deps, bName),
+	)
 }
 
 func (m battleModel) finish() (screenModel, tea.Cmd) {
@@ -118,6 +123,9 @@ func (m battleModel) finish() (screenModel, tea.Cmd) {
 
 func (m battleModel) Update(msg tea.Msg) (screenModel, tea.Cmd) {
 	switch msg := msg.(type) {
+	case artLoadedMsg:
+		m.deps.Art.handle(msg)
+		return m, nil
 	case battleTickMsg:
 		if m.step != animateStep {
 			return m, nil
@@ -202,6 +210,12 @@ func (m battleModel) View() string {
 		b.WriteString(renderChoiceList(m.secondList, m.cursor))
 		b.WriteString("\n" + helpStyle.Render("↑/↓ move · enter pick · esc back"))
 	case animateStep, doneStep:
+		aArt := m.deps.Art.get(m.aName)
+		bArt := m.deps.Art.get(m.bName)
+		if aArt != "" || bArt != "" {
+			b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top,
+				boxStyle.Render(aArt), boxStyle.Render(bArt)) + "\n")
+		}
 		b.WriteString(fmt.Sprintf("%-12s %s %d/%d\n", m.aName, hpBar(m.aHP, m.aMaxHP, 12), m.aHP, m.aMaxHP))
 		b.WriteString(fmt.Sprintf("%-12s %s %d/%d\n", m.bName, hpBar(m.bHP, m.bMaxHP, 12), m.bHP, m.bMaxHP))
 		b.WriteString("\n")
