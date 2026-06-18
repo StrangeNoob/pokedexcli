@@ -20,7 +20,7 @@ func TestPokedexPartyToggle(t *testing.T) {
 	if !d.Dex.InParty("pikachu") {
 		t.Fatal("pressing p should add to party")
 	}
-	updated, _ = m.Update(runeKey('p'))
+	m.Update(runeKey('p'))
 	if d.Dex.InParty("pikachu") {
 		t.Fatal("pressing p again should remove from party")
 	}

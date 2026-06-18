@@ -12,10 +12,10 @@ import (
 func TestFetchImageAndSpriteField(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/pokemon/pikachu" {
-			w.Write([]byte(`{"name":"pikachu","sprites":{"front_default":"http://example/img.png"}}`))
+			_, _ = w.Write([]byte(`{"name":"pikachu","sprites":{"front_default":"http://example/img.png"}}`))
 			return
 		}
-		w.Write([]byte("PNGBYTES"))
+		_, _ = w.Write([]byte("PNGBYTES"))
 	}))
 	defer srv.Close()
 

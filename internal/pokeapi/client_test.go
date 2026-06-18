@@ -13,7 +13,7 @@ func TestFetchPokemonUsesCacheAndParsesJSON(t *testing.T) {
 	calls := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		w.Write([]byte(`{"name":"pikachu","base_experience":112,"height":4,"weight":60,
+		_, _ = w.Write([]byte(`{"name":"pikachu","base_experience":112,"height":4,"weight":60,
 			"stats":[{"base_stat":35,"stat":{"name":"hp"}}],
 			"types":[{"slot":1,"type":{"name":"electric"}}]}`))
 	}))
