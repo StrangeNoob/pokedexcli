@@ -15,13 +15,22 @@ Powered by [PokeAPI](https://pokeapi.co) and built with
 
 ## Demo
 
+### TUI (`pokedexcli tui`)
+
+![Pokédex CLI TUI demo](assets/tui-demo.gif)
+
+> The full-screen interface: browse the Pokédex, check your bag, and run an
+> animated, type-aware battle — each Pokémon rendered from its real sprite as
+> colored terminal art.
+
+### REPL
+
 ![Pokédex CLI REPL demo](assets/demo.gif)
 
 > A quick tour of the REPL — explore an area, catch a Pokémon, inspect it, then
-> check your bag and Pokédex. Run `pokedexcli tui` for the full-screen interface
-> with colored sprite art and animated battles.
->
-> _Recorded with [asciinema](https://github.com/asciinema/asciinema) and rendered to a GIF with [agg](https://github.com/asciinema/agg) (`make demo`)._
+> check your bag and Pokédex.
+
+> _Both clips are recorded with [asciinema](https://github.com/asciinema/asciinema) and rendered to GIFs with [agg](https://github.com/asciinema/agg) (`make demo` / `make demo-tui`)._
 
 ## Features
 

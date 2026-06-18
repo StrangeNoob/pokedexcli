@@ -2,7 +2,7 @@ BINARY := pokedexcli
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: help build run tui test cover vet fmt fmt-check lint clean install snapshot tidy demo
+.PHONY: help build run tui test cover vet fmt fmt-check lint clean install snapshot tidy demo demo-tui
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -47,6 +47,9 @@ snapshot: ## Build a local release snapshot with GoReleaser
 
 demo: ## Record the REPL demo GIF (needs asciinema, agg, tmux)
 	bash scripts/record-demo.sh
+
+demo-tui: ## Record the TUI demo GIF (needs asciinema, agg, tmux)
+	bash scripts/record-tui-demo.sh
 
 clean: ## Remove build artifacts
 	rm -f $(BINARY) coverage.out
