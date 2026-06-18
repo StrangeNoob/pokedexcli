@@ -7,27 +7,47 @@ import (
 	"time"
 
 	"github.com/chzyer/readline"
+
 	"github.com/strangenoob/pokedexcli/internal/pokeapi"
 	"github.com/strangenoob/pokedexcli/internal/pokecache"
 	"github.com/strangenoob/pokedexcli/internal/pokedex"
+	"github.com/strangenoob/pokedexcli/internal/tui"
 )
 
 // osExit is indirected so commandExit stays testable.
 var osExit = os.Exit
 
-func main() {
+func loadGame() (*pokedex.Pokedex, string) {
 	savePath, err := pokedex.DefaultSavePath()
 	if err != nil {
 		fmt.Println("Warning: could not determine save path:", err)
 		savePath = "pokedex_save.json"
 	}
-
 	dex, err := pokedex.Load(savePath)
 	if err != nil {
 		fmt.Println("Warning: could not load save, starting fresh:", err)
 		dex = pokedex.New()
 	}
+	return dex, savePath
+}
 
+func main() {
+	if len(os.Args) > 1 && os.Args[1] == "tui" {
+		dex, savePath := loadGame()
+		deps := tui.Deps{
+			Dex:      dex,
+			Client:   pokeapi.NewClient(pokecache.NewCache(5 * time.Second)),
+			RNG:      rand.New(rand.NewSource(time.Now().UnixNano())),
+			SavePath: savePath,
+		}
+		if err := tui.Run(deps); err != nil {
+			fmt.Println("Error:", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	dex, savePath := loadGame()
 	cfg := &config{
 		client:   pokeapi.NewClient(pokecache.NewCache(5 * time.Second)),
 		dex:      dex,
@@ -45,9 +65,9 @@ func main() {
 	for {
 		line, err := rl.Readline()
 		if err == readline.ErrInterrupt {
-			continue // Ctrl+C clears the line; keep going
+			continue
 		}
-		if err != nil { // io.EOF (Ctrl+D) or other read error
+		if err != nil {
 			fmt.Println("Closing the Pokedex... Goodbye!")
 			autoSave(cfg)
 			return
